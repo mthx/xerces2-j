@@ -239,13 +239,15 @@ public class DocumentImpl
                                                      whatToShow,
                                                      filter,
                                                      entityReferenceExpansion);
-        if (iterators == null) {
+        if (iterators == null && !isPermanentlyReadOnly()) {
             iterators = new LinkedList();
             iteratorReferenceQueue = new ReferenceQueue();
         }
 
-        removeStaleIteratorReferences();
-        iterators.add(new WeakReference(iterator, iteratorReferenceQueue));
+        if (!isPermanentlyReadOnly()) {
+            removeStaleIteratorReferences();
+            iterators.add(new WeakReference(iterator, iteratorReferenceQueue));
+        }
 
         return iterator;
     }
@@ -356,15 +358,17 @@ public class DocumentImpl
      */
     public Range createRange() {
 
-        if (ranges == null) {
+        if (ranges == null && !isPermanentlyReadOnly()) {
             ranges = new LinkedList();
             rangeReferenceQueue = new ReferenceQueue();
         }
 
         Range range = new RangeImpl(this);
 
-        removeStaleRangeReferences();
-        ranges.add(new WeakReference(range, rangeReferenceQueue));
+        if (!isPermanentlyReadOnly()) {
+            removeStaleRangeReferences();
+            ranges.add(new WeakReference(range, rangeReferenceQueue));
+        }
 
         return range;
 
