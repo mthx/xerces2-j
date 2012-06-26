@@ -117,6 +117,9 @@ public class DocumentImpl
 
     /** Bypass mutation events firing. */
     protected boolean mutationEvents = false;
+    
+    /** Listener counts by event type. */
+    private java.util.Hashtable lCounts=new java.util.Hashtable();
 
     //
     // Constructors
@@ -636,6 +639,20 @@ public class DocumentImpl
 
     } // LEntry
 	
+    private LCount lookupLCount(String evtName)
+    {
+        LCount lc=(LCount)lCounts.get(evtName);
+        if(lc==null)
+            lCounts.put(evtName,(lc=new LCount()));
+        return lc;          
+    }
+    
+    private boolean hasListeners(String evtName)
+    {
+        LCount lCount = lookupLCount(evtName);
+        return lCount.total > 0;
+    }
+
     /**
      * Introduced in DOM Level 2. <p> Register an event listener with this
      * Node. A listener may be independently registered as both Capturing and
@@ -667,7 +684,7 @@ public class DocumentImpl
         nodeListeners.addElement(new LEntry(type, listener, useCapture));
 	    
         // Record active listener
-        LCount lc = LCount.lookup(type);
+        LCount lc = lookupLCount(type);
         if (useCapture) {
             ++lc.captures;
             ++lc.total;
@@ -714,7 +731,7 @@ public class DocumentImpl
                     setEventListeners(node, null);
 
                 // Remove active listener
-                LCount lc = LCount.lookup(type);
+                LCount lc = lookupLCount(type);
                 if (useCapture) {
                     --lc.captures;
                     --lc.total;
@@ -802,7 +819,7 @@ public class DocumentImpl
         }
         
         // If nobody is listening for this event, discard immediately
-        LCount lc = LCount.lookup(evt.getType());
+        LCount lc = lookupLCount(evt.getType());
         if (lc.total == 0)
             return evt.preventDefault;
 
@@ -1053,9 +1070,8 @@ public class DocumentImpl
         // We have to send DOMAttrModified.
         NodeImpl owner = null;
         if (enclosingAttr != null) {
-            LCount lc = LCount.lookup(MutationEventImpl.DOM_ATTR_MODIFIED);
             owner = (NodeImpl) enclosingAttr.getOwnerElement();
-            if (lc.total > 0) {
+            if (hasListeners(MutationEventImpl.DOM_ATTR_MODIFIED)) {
                 if (owner != null) {
                     MutationEventImpl me =  new MutationEventImpl();
                     me.initMutationEvent(MutationEventImpl.DOM_ATTR_MODIFIED,
@@ -1072,8 +1088,7 @@ public class DocumentImpl
         // set of changes. 
         // "This event is dispatched after all other events caused by the
         // mutation have been fired."
-        LCount lc = LCount.lookup(MutationEventImpl.DOM_SUBTREE_MODIFIED);
-        if (lc.total > 0) {
+        if (hasListeners(MutationEventImpl.DOM_SUBTREE_MODIFIED)) {
             MutationEvent me =  new MutationEventImpl();
             me.initMutationEvent(MutationEventImpl.DOM_SUBTREE_MODIFIED,
                                  true, false, null, null,
@@ -1104,8 +1119,7 @@ public class DocumentImpl
         // If we're within the scope of an Attr and DOMAttrModified 
         // was requested, we need to preserve its previous value for
         // that event.
-        LCount lc = LCount.lookup(MutationEventImpl.DOM_ATTR_MODIFIED);
-        if (lc.total > 0) {
+        if (hasListeners(MutationEventImpl.DOM_ATTR_MODIFIED)) {
             NodeImpl eventAncestor = node;
             while (true) {
                 if (eventAncestor == null)
@@ -1152,9 +1166,7 @@ public class DocumentImpl
     private void mutationEventsModifiedCharacterData(NodeImpl node, String oldvalue, String value, boolean replace) {
         if (!replace) {
             // MUTATION POST-EVENTS:
-            LCount lc =
-                LCount.lookup(MutationEventImpl.DOM_CHARACTER_DATA_MODIFIED);
-            if (lc.total > 0) {
+            if (hasListeners(MutationEventImpl.DOM_CHARACTER_DATA_MODIFIED)) {
                 MutationEvent me = new MutationEventImpl();
                 me.initMutationEvent(
                                 MutationEventImpl.DOM_CHARACTER_DATA_MODIFIED,
@@ -1209,8 +1221,7 @@ public class DocumentImpl
         // MUTATION POST-EVENTS:
         // "Local" events (non-aggregated)
         // New child is told it was inserted, and where
-        LCount lc = LCount.lookup(MutationEventImpl.DOM_NODE_INSERTED);
-        if (lc.total > 0) {
+        if (hasListeners(MutationEventImpl.DOM_NODE_INSERTED)) {
             MutationEventImpl me = new MutationEventImpl();
             me.initMutationEvent(MutationEventImpl.DOM_NODE_INSERTED,
                                  true, false, node,
@@ -1220,9 +1231,7 @@ public class DocumentImpl
 
         // If within the Document, tell the subtree it's been added
         // to the Doc.
-        lc = LCount.lookup(
-                        MutationEventImpl.DOM_NODE_INSERTED_INTO_DOCUMENT);
-        if (lc.total > 0) {
+        if (hasListeners(MutationEventImpl.DOM_NODE_INSERTED_INTO_DOCUMENT)) {
             NodeImpl eventAncestor = node;
             if (savedEnclosingAttr != null)
                 eventAncestor = (NodeImpl)
@@ -1332,8 +1341,7 @@ public class DocumentImpl
             saveEnclosingAttr(node);
         }
         // Child is told that it is about to be removed
-        LCount lc = LCount.lookup(MutationEventImpl.DOM_NODE_REMOVED);
-        if (lc.total > 0) {
+        if (hasListeners(MutationEventImpl.DOM_NODE_REMOVED)) {
             MutationEventImpl me= new MutationEventImpl();
             me.initMutationEvent(MutationEventImpl.DOM_NODE_REMOVED,
                                  true, false, node, null,
@@ -1343,9 +1351,7 @@ public class DocumentImpl
 
         // If within Document, child's subtree is informed that it's
         // losing that status
-        lc = LCount.lookup(
-                         MutationEventImpl.DOM_NODE_REMOVED_FROM_DOCUMENT);
-        if (lc.total > 0) {
+        if (hasListeners(MutationEventImpl.DOM_NODE_REMOVED_FROM_DOCUMENT)) {
             NodeImpl eventAncestor = this;
             if(savedEnclosingAttr != null)
                 eventAncestor = (NodeImpl)
@@ -1453,8 +1459,7 @@ public class DocumentImpl
     private void mutationEventsRemovedAttrNode(AttrImpl attr, NodeImpl oldOwner, String name) {
         // If we have to send DOMAttrModified (determined earlier),
         // do so.
-        LCount lc = LCount.lookup(MutationEventImpl.DOM_ATTR_MODIFIED);
-        if (lc.total > 0) {
+        if (hasListeners(MutationEventImpl.DOM_ATTR_MODIFIED)) {
             MutationEventImpl me= new MutationEventImpl();
             me.initMutationEvent(MutationEventImpl.DOM_ATTR_MODIFIED,
                                  true, false, attr,

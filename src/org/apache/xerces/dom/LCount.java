@@ -29,10 +29,6 @@ package org.apache.xerces.dom;
     
     ???? CONCERN: Hashtables are known to be "overserialized" in
     current versions of Java. That may impact performance.
-    
-    ???? CONCERN: The hashtable should probably be a per-document object.
-    Finer granularity would be even better, but would cost more cycles to
-    resolve and might not save enough event traffic to be worth the investment.
 */
 /**
  * @xerces.internal
@@ -42,14 +38,5 @@ package org.apache.xerces.dom;
 
 class LCount 
 { 
-    static java.util.Hashtable lCounts=new java.util.Hashtable();
     public int captures=0,bubbles=0,defaults, total=0;
-
-    static LCount lookup(String evtName)
-    {
-        LCount lc=(LCount)lCounts.get(evtName);
-        if(lc==null)
-            lCounts.put(evtName,(lc=new LCount()));
-        return lc;	        
-    }
 } // class LCount
