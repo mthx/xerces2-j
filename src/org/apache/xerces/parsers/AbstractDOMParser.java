@@ -115,6 +115,10 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
     protected static final String DEFER_NODE_EXPANSION =
     Constants.XERCES_FEATURE_PREFIX + Constants.DEFER_NODE_EXPANSION_FEATURE;
 
+    /** Feature id: thread safe read. */
+    protected static final String READ_ONLY =
+    Constants.XERCES_FEATURE_PREFIX + Constants.READ_ONLY;
+
 
     /** Recognized features. */
     private static final String[] RECOGNIZED_FEATURES = {
@@ -123,7 +127,8 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
         INCLUDE_COMMENTS_FEATURE,
         CREATE_CDATA_NODES_FEATURE,
         INCLUDE_IGNORABLE_WHITESPACE,
-        DEFER_NODE_EXPANSION
+        DEFER_NODE_EXPANSION,
+        READ_ONLY
     };
 
     // property ids
@@ -231,6 +236,7 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
     // deferred expansion data
 
     protected boolean              fDeferNodeExpansion;
+    protected boolean              fPermanentlyReadOnly;
     protected boolean              fNamespaceAware;
     protected DeferredDocumentImpl fDeferredDocumentImpl;
     protected int                  fDocumentIndex;
@@ -298,6 +304,7 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
         fConfiguration.setFeature (CREATE_ENTITY_REF_NODES, true);
         fConfiguration.setFeature (INCLUDE_IGNORABLE_WHITESPACE, true);
         fConfiguration.setFeature (DEFER_NODE_EXPANSION, true);
+        fConfiguration.setFeature (READ_ONLY, false);
         fConfiguration.setFeature (INCLUDE_COMMENTS_FEATURE, true);
         fConfiguration.setFeature (CREATE_CDATA_NODES_FEATURE, true);
 
@@ -413,6 +420,12 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
 
         fDeferNodeExpansion =
         fConfiguration.getFeature (DEFER_NODE_EXPANSION);
+
+        fPermanentlyReadOnly = fConfiguration.getFeature (READ_ONLY);
+        if (fPermanentlyReadOnly) {
+            // We can't defer expansion as we need to maintain the thread safety of read-only mode.
+            fDeferNodeExpansion = false;
+        }
 
         fNamespaceAware = fConfiguration.getFeature (NAMESPACES);
 
@@ -1492,6 +1505,10 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
                 fDeferredDocumentImpl.setInputEncoding (fLocator.getEncoding());
             }
             fCurrentNodeIndex = -1;
+        }
+
+        if (fPermanentlyReadOnly && fDocumentImpl != null) {
+            fDocumentImpl.setPermanentlyReadOnly(fPermanentlyReadOnly);
         }
 
     } // endDocument()

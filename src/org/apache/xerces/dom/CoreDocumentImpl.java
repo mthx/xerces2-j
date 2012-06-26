@@ -130,6 +130,9 @@ extends ParentNode implements Document  {
 
     /**Experimental DOM Level 3 feature: documentURI */
     protected String fDocumentURI;
+    
+    /** Experimental thread-safe read only feature */
+    private boolean fPermanentlyReadOnly;
 
     /** Table for user data attached to this document nodes. */
     protected Map userData;  // serialized as Hashtable
@@ -281,6 +284,14 @@ extends ParentNode implements Document  {
             doctypeImpl.ownerDocument = this;
             appendChild(doctype);
         }
+    }
+
+    boolean isPermanentlyReadOnly() {
+        return fPermanentlyReadOnly;
+    }
+    
+    public void setPermanentlyReadOnly(boolean readOnly) {
+        fPermanentlyReadOnly = readOnly;
     }
 
     //

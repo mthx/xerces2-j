@@ -667,6 +667,12 @@ public class DocumentImpl
     protected void addEventListener(NodeImpl node, String type,
                                     EventListener listener, boolean useCapture)
     {
+        if (isPermanentlyReadOnly()) {
+            // This is limitation needed to avoid mutating the non-thread-safe event related fields.
+            String msg = DOMMessageFormatter.formatMessage(DOMMessageFormatter.DOM_DOMAIN, "NOT_SUPPORTED_ERR", null);
+            throw new DOMException(DOMException.NOT_SUPPORTED_ERR, msg);
+        }
+        
         // We can't dispatch to blank type-name, and of course we need
         // a listener to dispatch to
         if (type == null || type.length() == 0 || listener == null)

@@ -213,6 +213,9 @@ public abstract class ParentNode
         if (needsSyncChildren()) {
             synchronizeChildren();
         }
+        if (ownerDocument.isPermanentlyReadOnly()) {
+            return new CopyingNodeListImpl(this);
+        }
         return this;
 
     } // getChildNodes():NodeList
