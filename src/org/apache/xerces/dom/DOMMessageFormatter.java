@@ -41,7 +41,6 @@ public class DOMMessageFormatter {
     private static Locale locale = null;
     
     DOMMessageFormatter() {
-        locale = Locale.getDefault();
     }
     
     /**
@@ -64,10 +63,7 @@ public class DOMMessageFormatter {
     throws MissingResourceException {
         ResourceBundle resourceBundle = getResourceBundle(domain);
         if(resourceBundle == null){
-            init();
-            resourceBundle = getResourceBundle(domain);
-            if(resourceBundle == null)
-                throw new MissingResourceException("Unknown domain" + domain, null, key);
+            throw new MissingResourceException("Unknown domain" + domain, null, key);
         }
         // format message
         String msg;
@@ -106,7 +102,11 @@ public class DOMMessageFormatter {
         return msg;
     }
     
-    static ResourceBundle getResourceBundle(String domain) {
+    static synchronized ResourceBundle getResourceBundle(String domain) {
+        if (domResourceBundle == null) {
+            init();
+        }
+        
         if (domain == DOM_DOMAIN || domain.equals(DOM_DOMAIN)) {
             return domResourceBundle;
         }
@@ -122,21 +122,17 @@ public class DOMMessageFormatter {
     /**
      * Initialize Message Formatter.
      */
-    public static void init() {
-        Locale _locale = locale;
-        if (_locale == null) {
-            _locale = Locale.getDefault();
-        }
-        domResourceBundle = ResourceBundle.getBundle("org.apache.xerces.impl.msg.DOMMessages", _locale);
-        serResourceBundle = ResourceBundle.getBundle("org.apache.xerces.impl.msg.XMLSerializerMessages", _locale);
-        xmlResourceBundle = ResourceBundle.getBundle("org.apache.xerces.impl.msg.XMLMessages", _locale);
+    public static synchronized void init() {
+        domResourceBundle = ResourceBundle.getBundle("org.apache.xerces.impl.msg.DOMMessages", locale);
+        serResourceBundle = ResourceBundle.getBundle("org.apache.xerces.impl.msg.XMLSerializerMessages", locale);
+        xmlResourceBundle = ResourceBundle.getBundle("org.apache.xerces.impl.msg.XMLMessages", locale);
     }
     
     /**
      * Set Locale to be used by the formatter.
      * @param dlocale
      */
-    public static void setLocale(Locale dlocale) {
-        locale = dlocale;
+    public static synchronized void setLocale(Locale dlocale) {
+        locale = dlocale != null ? dlocale : Locale.getDefault();
     }
 }
