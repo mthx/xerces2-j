@@ -38,7 +38,7 @@ public class DOMMessageFormatter {
     private static ResourceBundle domResourceBundle = null;
     private static ResourceBundle xmlResourceBundle = null;
     private static ResourceBundle serResourceBundle = null;
-    private static Locale locale = null;
+    private static Locale locale = Locale.getDefault();
     
     DOMMessageFormatter() {
     }
