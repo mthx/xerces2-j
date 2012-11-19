@@ -1916,7 +1916,7 @@ public abstract class NodeImpl
      */
 
     final boolean isReadOnly() {
-        return (flags & READONLY) != 0;
+        return (flags & READONLY) != 0 || ownerDocument().isPermanentlyReadOnly();
     }
 
     final void isReadOnly(boolean value) {

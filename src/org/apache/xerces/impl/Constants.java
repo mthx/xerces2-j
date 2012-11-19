@@ -244,6 +244,9 @@ public final class Constants {
     /** Defer node expansion feature ("dom/defer-node-expansion"). */
     public static final String DEFER_NODE_EXPANSION_FEATURE = "dom/defer-node-expansion";
     
+    /** Thread-safe read-only DOM ("dom/read-only"). */
+    public static final String READ_ONLY = "dom/read-only";
+    
     /** Create entity reference nodes feature ("dom/create-entity-ref-nodes"). */
     public static final String CREATE_ENTITY_REF_NODES_FEATURE = "dom/create-entity-ref-nodes";
     
